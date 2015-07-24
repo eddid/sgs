@@ -1,4 +1,4 @@
-﻿$(document).ready(function () {
+$(document).ready(function () {
     
     sgs.interface.Load_Data();
     
@@ -25,6 +25,7 @@
             $.each($('.player_card .select_unable'), function(i, d) {
                 $(d).css('display', 'none');
             });
+			player.stage = -1;
         };
         player.ask_card = function(opt) {
             $('#player_cover').css('display', 'none');
@@ -56,10 +57,13 @@
                         sgs.animation.Get_Damage(d);
                     });
                     break;
+                default:
+                    sgs.animation.Play_Card(player, targets, cards);
+                    break;
             }
         });
     };
-    
+	
     /* 游戏开始 */
     $('#game_start').click(function (e) {
         $('#game_start').unbind('click', arguments.callee);
@@ -350,6 +354,7 @@
         $(this).find('.hover').css('display', 'block');
         var player = $('#player')[0].player;
         
+        player.selected_cards = [];
         $.each(player.card, function(i, d) {
             if(d.selected)
                 player.selected_cards.push(d);
@@ -359,8 +364,8 @@
             new sgs.Operate(
                 player.selected_cards[0].name,
                 player,
-                player.selected_targets.length == 0 ? player : player.selected_targets,
-                player.selected_cards
+                player.selected_targets.length == 0 ? player : player.selected_targets[0],
+                player.selected_cards[0]
             )
         );
         $(this).css('display', 'none');
@@ -396,6 +401,8 @@
         var player = $('#player')[0].player;
         player.card_selectable_count = player.card.length - player.blood;
         player.stage = 3;
+		sgs.interface.bout.discard();
+		player.discard();
     });
 
     /* 五谷丰登等选牌 */

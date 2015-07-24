@@ -223,7 +223,7 @@ var sgs = sgs || {};
         bout.choice.pop();
 
         } else { /* if(opt.id == "技能") else */
-
+        sgs.interface.focusPlayer(plsrc.dom, false);
         if(card) { /* 有卡应对 */
             switch(card.name) {
                 case "桃":
@@ -238,6 +238,7 @@ var sgs = sgs || {};
                     break;
                 case "闪":
                     bout.opt = [];
+                    bout.notify("apply_card", plsrc, pltar, opt.data);
                     console.log(_("{0} 打出了闪", plsrc.nickname)); 
                     bout.choice.pop();
                     break;
@@ -267,7 +268,7 @@ var sgs = sgs || {};
                             plsrc = opt_top.source;
 
                             pltar.blood--;
-                            bout.notify("apply_card", plsrc, pltar, opt_top.data);
+                            /*bout.notify("apply_card", plsrc, pltar, opt_top.data);*/
                             
                             if(pltar.blood < 1) {
                                 ask_peach(bout, pltar, plsrc);

@@ -149,4 +149,24 @@
         card_choose_box.appendTo($('#main'));
     };
 
+    /* 设置或取消玩家头像上的焦点 */
+	sgs.interface.focusPlayer = function (dom, focus) {
+	    var jqDom = $(dom);
+        var leftNum = parseInt(jqDom.css('left')),
+            topNum = parseInt(jqDom.css('top'));
+		if (focus) {
+            jqDom.css({
+                'box-shadow': '0px 0px 15px 5px #dd0200',
+                left: leftNum - 1,
+                top: topNum - 1
+            });
+		} else {
+            jqDom.css({
+                'box-shadow': '2px 2px 2px #000',
+                left: leftNum + 1,
+                top: topNum + 1
+            });
+		}
+	};
+
 })(window.sgs);

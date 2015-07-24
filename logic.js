@@ -284,22 +284,24 @@ var sgs = sgs || {};
     sgs.Bout.prototype.hero_range = function(pl, plrange) {
         /* 获得英雄所能攻击得到的范围 */
         var result = [], 
-            pos = 0,
+            distance = 0,
             pls = this.player,
-            plpos = this.playernum[pl.nickname], 
-            plrange = plrange || pl.range()[0],
-            selist = slice.call(pls, plpos+1).concat(slice.call(pls, 0, plpos)),
-            arlist = copy(selist).reverse();
+            plpos = pl.identity, 
+            plrange = plrange || pl.range()[0];
 
-        each([selist, arlist], function(bn, bi) {
-        each(bi, function(n, i) {
-            pos = (n + 1) + (i.equip[2] ? 1 : 0); /* 有+1马还需要加1 */
-            if(plrange >= pos && result.indexOf(i) == -1) {
+        each(pls, function(n, i) {
+            if (plpos == i.identity) {
+			    return;
+			} else if (plpos < i.identity) {
+			    distance = Math.min(i.identity - plpos, plpos + pls.length - i.identity);
+			} else {
+			    distance = Math.min(plpos - i.identity, i.identity + pls.length - plpos);
+			}
+			distance = distance + (i.equip[2] ? 1 : 0); /* 有+1马还需要加1 */
+            if(plrange >= distance) {
                 result.push(i);
             }
-        });
-        });
-        return result;
+        });        return result;
     };
     sgs.Bout.prototype.next_player = function(pl) {
         var pls = this.player;
@@ -328,7 +330,8 @@ var sgs = sgs || {};
                 var opt = bout.choice[bout.choice.length-1],
                     pltar = opt.target;
 
-                pltar.ask_card(opt); 
+                pltar.ask_card(opt);
+                bout.choice.pop();
             } else {
                 if(bout.judge()) {
                     switch(bout.step) {
@@ -403,7 +406,7 @@ var sgs = sgs || {};
         var pl = opt.source,
             card = opt.data;
 
-        if(card) { /* 移除所用卡牌 */
+        if(card && (card instanceof sgs.Card)) { /* 移除所用卡牌 */
             if(!pl.rmcard(card)) {
                 throw new Error("有没有搞错!明明都用过这牌了!你以为电脑是好欺负的?");
                 return ;
@@ -419,7 +422,7 @@ var sgs = sgs || {};
         var pl = opt.source,
             card = opt.data;
         
-        if(card && (card instanceof Card)) { /* 移除所用卡牌 */
+        if(card && (card instanceof sgs.Card)) { /* 移除所用卡牌 */
             if(!pl.rmcard(card)) {
                 throw new Error("有没有搞错!明明都用过这牌了!你以为电脑是好欺负的?");
                 return ;

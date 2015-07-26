@@ -141,51 +141,57 @@ var sgs = sgs || {};
             card = opt.data;
 
         if(opt.id == "技能") {
-        switch(card) {
-            case "洛神":
-                bout.notify("skill", "洛神", pltar, judge_card, judge_card.color < 2);
-                if(judge_card.color < 2) {
-                    pltar.status["zhenji.luoshen"] = -1;
-                } else {
-                    pltar.card.push(judge_card);
-                    console.log(_("{0} 发动了技能洛神,获得 {1}", pltar.nickname, judge_card.name));
-                }
-                break;
-        }
-        } else {
-        switch(card.name) {
-            case "乐不思蜀":
-                //var judge_card = bout.card.shift(); 
-                bout.notify("judge_card", pltar, judge_card);
-                console.log("乐不思蜀判定--", judge_card.color);
-                if(judge_card.color != 1) { 
-                    bout.notify("apply_card", plsrc, pltar, card);
-                    pltar.status["lebusishu"] = true;
-                }
-                break;
-            case "无中生有": 
-                bout.notify("apply_card", plsrc, pltar, card);
-                var cards = bout.card.splice(0, 2);
-                bout.notify("get_card", pltar, cards);
-                console.log(pltar.nickname, "获得", cards);
-                pltar.card = pltar.card.concat(cards);
-                break;
-            case "闪电":
-                //var judge_card = bout.card.shift();
-                bout.notify("judge_card", pltar, judge_card);
-                console.log("闪电判定--", judge_card.color);
-                if(judge_card.color == 3 && judge_card.digit >= 2 && judge_card.digit <= 9) { 
-                    bout.notify("apply_card", plsrc, pltar, card);
-                    
-                    pltar.blood -= 3;
-                    console.log(_("天要下雨,娘要嫁人.你这福分,有幸三生.坑爹阿,遭雷劈啦!"));
-                    
-                    if(pltar.blood < 1) {
-                        ask_peach(bout, pltar, plsrc);  
+            switch(card) {
+                case "洛神":
+                    bout.notify("skill", "洛神", pltar, judge_card, judge_card.color < 2);
+                    if(judge_card.color < 2) {
+                        pltar.status["zhenji.luoshen"] = -1;
+                    } else {
+                        pltar.card.push(judge_card);
+                        console.log(_("{0} 发动了技能洛神,获得 {1}", pltar.nickname, judge_card.name));
                     }
-                }
-                break;
-        }
+                    break;
+            }
+        } else {
+            switch(card.name) {
+                case "乐不思蜀":
+                    //var judge_card = bout.card.shift(); 
+                    bout.notify("judge_card", pltar, judge_card);
+                    console.log("乐不思蜀判定--", judge_card.color);
+                    if(judge_card.color != 1) { 
+                        bout.notify("apply_card", plsrc, pltar, card);
+                        pltar.status["lebusishu"] = true;
+                    }
+                    break;
+                case "无中生有": 
+                    bout.notify("apply_card", plsrc, pltar, card);
+                    var cards = bout.card.splice(0, 2);
+                    bout.notify("get_card", pltar, cards);
+                    console.log(pltar.nickname, "获得", cards);
+                    pltar.card = pltar.card.concat(cards);
+                    break;
+                case "闪电":
+                    //var judge_card = bout.card.shift();
+                    bout.notify("judge_card", pltar, judge_card);
+                    console.log("闪电判定--", judge_card.color);
+                    if(judge_card.color == 3 && judge_card.digit >= 2 && judge_card.digit <= 9) { 
+                        bout.notify("apply_card", plsrc, pltar, card);
+                        
+                        pltar.blood -= 3;
+                        console.log(_("天要下雨,娘要嫁人.你这福分,有幸三生.坑爹阿,遭雷劈啦!"));
+                        
+                        if(pltar.blood < 1) {
+                            ask_peach(bout, pltar, plsrc);  
+                        }
+                    }
+                    break;
+				case "桃园结义":
+					break;
+				case "五谷丰登":
+					break;
+				case "过河拆桥":
+					break;
+            }
         }
     } })(sgs.interpreter.ask_peach);
 
@@ -250,6 +256,7 @@ var sgs = sgs || {};
                     break;
             }
         } else { /* 无所作为 */
+            choice_bot = choice_bot || opt;
             if(choice_bot) {
                 switch(choice_bot.id) {
                     case "桃":
@@ -259,6 +266,7 @@ var sgs = sgs || {};
                         console.log(choice_bot.target.nickname, "表示没有无懈");
                         if(last_choice) { /* 如果是最后一次请求无懈可击.则进行原来卡牌的判定 */
                             action_execute(bout, opt_top, bout.last_judge_card);
+							bout.opt = [];
                         }
                         break;
                     case "闪":
@@ -328,6 +336,15 @@ var sgs = sgs || {};
                         bout.opt.push(opt);   
                     }
                     break;
+				case "桃园结义":
+					break;
+                case "五谷丰登":
+                    break;
+                case "过河拆桥":
+                    break;
+                default:
+                    sgs.interpreter.response_card(bout, opt);
+                    return;
             }
         }
         bout.continue();

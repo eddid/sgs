@@ -128,12 +128,12 @@ var _ = sgs.func.format,
             cards = pl.card;
 
         if(!opt) { /* 主动出牌 */
-            return this.usecard();
+            return this.play_card();
         } else { /* 被动出牌 */
             bout.choice_card(new sgs.Operate(opt.id, pl, opt.source, pl.findcard(opt.id))); 
         }
     } })();
-    sgs.Ai.prototype.usecard = (function(attack_deviation, 
+    sgs.Ai.prototype.play_card = (function(attack_deviation, 
                                          magic_deviation,
                                          EQUIP_TYPE_MAPPING, 
                                          CARD_MAGIC_RANGE_MAPPING){ return function() {
@@ -204,20 +204,20 @@ var _ = sgs.func.format,
             }
         }
 
-        this.discard();
+        this.drop_card();
     } })(sgs.Ai.interpreter.attack_deviation, 
          sgs.Ai.interpreter.magic_deviation,
          sgs.EQUIP_TYPE_MAPPING, 
          sgs.CARD_MAGIC_RANGE_MAPPING);
 
-    sgs.Ai.prototype.discard = function() {
+    sgs.Ai.prototype.drop_card = function() {
         this.player.status["hassha"] = false;
         var bout = this.bout;
         /* 简单AI 啥也不做 */
-        opt = bout.discard(new sgs.Operate("弃牌", this.player));
+        opt = bout.drop_card(new sgs.Operate("弃牌", this.player));
         while(opt) { 
             console.log("需要弃牌", opt.data, "张");
-            opt = bout.discard(new sgs.Operate("弃牌", 
+            opt = bout.drop_card(new sgs.Operate("弃牌", 
                                          this.player,
                                          undefined, 
                                          choice(this.player.card, opt.data)));

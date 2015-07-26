@@ -21,11 +21,11 @@ $(document).ready(function () {
                 player.stage = 2;
             }
         };
-        player.discard = function() {
+        player.drop_card = function() {
             $.each($('.player_card .select_unable'), function(i, d) {
                 $(d).css('display', 'none');
             });
-			player.stage = -1;
+            player.stage = -1;
         };
         player.ask_card = function(opt) {
             $('#player_cover').css('display', 'none');
@@ -63,7 +63,7 @@ $(document).ready(function () {
             }
         });
     };
-	
+    
     /* 游戏开始 */
     $('#game_start').click(function (e) {
         $('#game_start').unbind('click', arguments.callee);
@@ -233,12 +233,7 @@ $(document).ready(function () {
                             $('.role').each(function(i, d) {/* 设置玩家为可选状态 */
                                 $(d).find('.role_cover').css('display', 'none');
                                 if(d.player.selected) {
-                                    $(d).css({
-                                        'box-shadow': '2px 2px 2px #000',
-                                        left: parseInt($(d).css('left')) + 1,
-                                        top: parseInt($(d).css('top')) + 1,
-                                    });
-                                    d.player.selected = false;
+                                    sgs.interface.focusPlayer(d, false);
                                 }
                             });
                             $('#ok').css('display', 'none');/* 隐藏确定按钮 */
@@ -369,6 +364,7 @@ $(document).ready(function () {
             )
         );
         $(this).css('display', 'none');
+        $('#cancel').css('display', 'none');
     });
     
     /* 取消按钮 */
@@ -376,6 +372,7 @@ $(document).ready(function () {
         if(e.button != 0)
             return;
         $(this).css('display', 'none');
+        $('#ok').css('display', 'none');
         var player = $('#player')[0].player;
         switch(player.stage) {
             case -1:
@@ -399,10 +396,11 @@ $(document).ready(function () {
         });
         
         var player = $('#player')[0].player;
+        player.selected_targets = [];
         player.card_selectable_count = player.card.length - player.blood;
         player.stage = 3;
-		sgs.interface.bout.discard();
-		player.discard();
+        sgs.interface.bout.drop_card();
+        player.drop_card();
     });
 
     /* 五谷丰登等选牌 */

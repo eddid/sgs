@@ -1,3 +1,18 @@
+2015-07-26
+============
+
+fixed bugs:
+ok/cancel button status issue,
+wuzhongshengyou bad bout.opt issue,
+calculate distance issue,
+step status issue,
+focusPlayer on player issue(not fixed completly)
+changed name of functions:
+discard -> drop_card
+usecard -> play_card
+getcard -> get_card
+add resource for renwang_shield
+
 2011-05-28
 ============
 

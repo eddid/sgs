@@ -328,6 +328,7 @@ sgs.EQUIP_IMG_MAPPING = {
     "大宛": "img/generals/equipment/dayuan.png",
     "的卢": "img/generals/equipment/dilu.png",
     "雌雄双股剑": "img/generals/equipment/double_sword.png",
+    "仁王盾": "img/generals/equipment/renwang_shield.png",
     "八卦阵": "img/generals/equipment/eight_diagram.png",
     "方天画戟": "img/generals/equipment/halberd.png",
     "绝影": "img/generals/equipment/jueying.png",

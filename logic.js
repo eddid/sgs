@@ -88,15 +88,15 @@ var sgs = sgs || {};
         
         this.AI.ask_card(opt);
     };
-    sgs.Player.prototype.usecard = function(opt) {
+    sgs.Player.prototype.play_card = function(opt) {
         if(!this.isAI) throw new Error("sorry ! I'm computer.");
 
-        this.AI.usecard(opt);
+        this.AI.play_card(opt);
     };
-    sgs.Player.prototype.discard = function(opt) {
+    sgs.Player.prototype.drop_card = function(opt) {
         if(!this.isAI) throw new Error("sorry ! I'm computer.");
 
-        this.AI.discard(opt);
+        this.AI.drop_card(opt);
     };
     
     /*
@@ -291,17 +291,18 @@ var sgs = sgs || {};
 
         each(pls, function(n, i) {
             if (plpos == i.identity) {
-			    return;
-			} else if (plpos < i.identity) {
-			    distance = Math.min(i.identity - plpos, plpos + pls.length - i.identity);
-			} else {
-			    distance = Math.min(plpos - i.identity, i.identity + pls.length - plpos);
-			}
-			distance = distance + (i.equip[2] ? 1 : 0); /* 有+1马还需要加1 */
+                return;
+            } else if (plpos < i.identity) {
+                distance = Math.min(i.identity - plpos, plpos + pls.length - i.identity);
+            } else {
+                distance = Math.min(plpos - i.identity, i.identity + pls.length - plpos);
+            }
+            distance = distance + (i.equip[2] ? 1 : 0); /* 有+1马还需要加1 */
             if(plrange >= distance) {
                 result.push(i);
             }
-        });        return result;
+        });
+        return result;
     };
     sgs.Bout.prototype.next_player = function(pl) {
         var pls = this.player;
@@ -331,18 +332,18 @@ var sgs = sgs || {};
                     pltar = opt.target;
 
                 pltar.ask_card(opt);
-                bout.choice.pop();
+                //bout.choice.pop();
             } else {
                 if(bout.judge()) {
                     switch(bout.step) {
                         case 0:
                             return bout.decision();
                         case 1:
-                            return bout.getcard();
+                            return bout.get_card();
                         case 2:
-                            return bout.usecard();
+                            return bout.play_card();
                         case 3:
-                            return bout.player[bout.curplayer].discard();
+                            return bout.player[bout.curplayer].drop_card();
                     }
                 }
             }
@@ -367,7 +368,7 @@ var sgs = sgs || {};
         this.step = 1;
         this.continue();
     } })(sgs.interpreter.decision);
-    sgs.Bout.prototype.getcard = function(opt) {
+    sgs.Bout.prototype.get_card = function(opt) {
         /* 摸牌 */
         var pl = this.player[this.curplayer],
             num = 2;
@@ -433,19 +434,24 @@ var sgs = sgs || {};
 
     } })(sgs.interpreter.response_card, sgs.Card);
 
-    sgs.Bout.prototype.usecard = (function(){ return function() {
+    sgs.Bout.prototype.play_card = (function(){ return function() {
 
         var pl = this.player[this.curplayer];
-        pl.choice_card();
+        if (pl.isAI) {
+            pl.play_card();
+        } else {
+            pl.choice_card();
+        }
 
     } })();
 
-    sgs.Bout.prototype.discard = function(opt) {
+    sgs.Bout.prototype.drop_card = function(opt) {
         /* 弃牌 */
         var pl = this.player[this.curplayer],
             cards,
             isdis = false;
         
+        this.step = 3;
         console.log(pl.nickname, "弃牌了");
         if(pl.blood < pl.card.length){
             cards = opt && opt.data;
@@ -455,7 +461,7 @@ var sgs = sgs || {};
                 pl.card = sub(pl.card, cards); 
             }
             console.log(pl.nickname, "弃牌", map(cards, function(i) { return i.name; }));
-            this.notify("discard", pl, cards);
+            this.notify("drop_card", pl, cards);
         }
 
         pl.status = {};

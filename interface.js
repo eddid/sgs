@@ -34,24 +34,20 @@
             $('#player_country').attr('src', sgs.COUNTRY_IMG_MAPPING[player.hero.country]);
             $('#player_name').text(player.nickname);
             $('#player_head_img').attr('src', 'img/generals/big/' + sgs.HEROIMAG_MAPPING[player.hero.name]);
-            for (var i = 0; i < player.hero.life; i++) {
-                $('<img src="img/system/blod_0.png" />').appendTo($('#player_blod_0'));
-                $('<img src="img/system/blod_1.png" />').appendTo($('#player_blod_1'));
-            }
             $("#player_identity img").attr('src', sgs.IDENTITY_IMG_MAPPING[player.identity]);
             $('#player_head')[0].name = player.hero.name;
         } else {
             $(player.dom).find('.role_country img').attr('src', sgs.COUNTRY_IMG_MAPPING[player.hero.country]);
             $(player.dom).find('.role_name').text('_' + player.hero.name + '_');
-            if(player.identity == 0)
+            if(player.identity == sgs.IDENTITY_LORD)
                 $(player.dom).find('.role_identity img').attr('src', sgs.IDENTITY_IMG_MAPPING[0]);
             $(player.dom).find('.head_img img').attr('src', 'img/generals/small/' + sgs.HEROIMAG_MAPPING[player.hero.name]);
-            for(var k = 0; k < player.hero.life; k++) {
-                $(player.dom).find('.blods_0').append('<img src="img/system/blod_0.png" />');
-                $(player.dom).find('.blods_1').append('<img src="img/system/blod_1.png" />');
-            }
             $(player.dom).find('.head_img')[0].name = player.hero.name;
         }
+		for(var k = 0; k < player.maxblood; k++) {
+			$(player.dom).find('.blods_0').append('<img src="img/system/blod_0.png" />');
+			$(player.dom).find('.blods_1').append('<img src="img/system/blod_1.png" />');
+		}
     };
 
     /* 数据加载 */
@@ -117,7 +113,7 @@
             $.each(cards, function(i, d) {
                 var card = $('<div class="choose_role_card"><img src="img/generals/hero/' +
                         sgs.HEROIMAG_MAPPING[d.name] + '" /></div>');
-                card[0].name = d.name;
+                card[0].heroRef = d;
                 card.css('left', i * (93 + card_padding * 2) + 'px');
                 card_choose_box.find('#choose_cards').append(card);
             });
@@ -140,7 +136,7 @@
                         d.color, ';"><span class="pattern"><img src="',
                         sgs.PATTERN_IMG_MAPPING[d.color], '" /></span><span class="num">',
                         sgs.CARD_COLOR_NUM_MAPPING.number[d.digit], '</span></div><div class="select_unable"></div></div>'].join(''));
-                card[0].name = d.name;
+                card[0].heroRef = d;
                 card.css('left', i * (93 + card_padding * 2) + 'px');
                 card_choose_box.find('#choose_cards').append(card);
             });
@@ -153,7 +149,7 @@
     sgs.interface.focusPlayer = function (dom, focus) {
         var jqDom = $(dom);
         if (dom.id == "player") {
-            jqDom = $(jqDom.find('#player_head')[0]);
+            jqDom = jqDom.find('#player_head');
         }
         var leftNum = parseInt(jqDom.css('left')),
             topNum = parseInt(jqDom.css('top'));
@@ -173,4 +169,38 @@
         dom.player.selected = focus;
     };
 
+    /* 更新玩家血量 */
+    sgs.interface.refreshBlood = function (player) {
+        var jqDom = $(player.dom);
+		var bloodsDIV = jqDom.find('.blods_1');
+        var blood_imgs = '';
+		var bloods = player.blood;
+		if (bloods > player.maxblood) {
+		    bloods = player.maxblood;
+		} else if (bloods < 0) {
+		    bloods = 0;
+		}
+        for(var i = 0; i < bloods; i++) {
+            blood_imgs += '<img src="img/system/blod_1.png" />';
+		}
+        bloodsDIV.html(blood_imgs);
+    };
+
+    /* 播放声音 */
+    sgs.interface.playSound = function(src) {
+        //$('#sound')[0].src = src;
+        //$('#sound')[0].play();
+    };
+	/*
+	 * 打印 JavaScript 函数调用堆栈,无名函数,然并卵
+	 */
+	sgs.interface.printCallStack = function () {
+		var i = 0;
+		var fun = arguments.callee;
+		do {
+			fun = fun.arguments.callee.caller;
+			console.log(++i + ': ' + fun);
+		} while (fun);
+	}
+    
 })(window.sgs);

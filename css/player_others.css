@@ -133,7 +133,7 @@
     float: left;
 }
 /* 玩家血量 */
-.blods_0, .blods_1
+.role .blods_0, .role .blods_1
 {
     position: absolute;
     left: 53px;
@@ -141,7 +141,7 @@
     width: 75px;
     height: 14px;
 }
-.blods_0 img, .blods_1 img
+.role .blods_0 img, .role .blods_1 img
 {
     margin-right: 1px;
     float: left;

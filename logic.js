@@ -19,22 +19,28 @@ var sgs = sgs || {};
     /*
      * 玩家对象
      * */
-    sgs.Player = function(nickname, identity, hero, isAI) {
+    sgs.Player = function(nickname, identity, hero, isAI, position) {
         /* 玩家 */ 
         /*
          * nickname : 昵称
          * identity : 身份
          * hero : 英雄
          * isAI : 是否为AI控制
+		 * position : 位置序号
          */
         this.nickname = nickname;
         this.identity = identity;
         this.hero = hero;
         this.isAI = isAI || false;
+		this.position = position;
         this.AI = undefined; 
         this.card = [];
 
-        this.blood = hero.life; /* 玩家当前生命值 */
+		this.maxblood = hero.life; /* 玩家最大生命值 */
+		/*if (sgs.IDENTITY_LORD == identity) {
+		    this.maxblood++;
+		}*/
+        this.blood = this.maxblood; /* 玩家当前生命值 */
         this.be_decision = []; /* 被施展的延迟技能 */
         this.equip = []; /* 装备, 0:武器, 1:防具, 2:+1马, 3:-1马 */
         this.status = {}; /* 临时状态 */
@@ -52,7 +58,7 @@ var sgs = sgs || {};
     sgs.Player.prototype.hascard = function(name) {
         var has = false;
         each(this.card, function(n, i){
-            if(i.name == name) {
+            if (i.name == name) {
                 has = true;
                 return false;
             }
@@ -78,10 +84,21 @@ var sgs = sgs || {};
         }
         return false;
     };
-    sgs.Player.prototype.choice_card = function(opt) {
-        if(!this.isAI) throw new Error("sorry ! I'm computer.");
-        
-        this.AI.choice_card(opt);
+    sgs.Player.prototype.choose_card = function(opt) {
+	    var bout = sgs.interface.bout;
+        if(this.isAI) {
+            this.AI.choose_card(opt);
+			/* 为下一玩家选牌作准备 */
+			if (bout.playOpts.length > 0) {
+				var next_opt = bout.playOpts[bout.playOpts.length - 1];
+				sgs.interpreter.ask_wuxie(bout, next_opt.target);
+			}
+			bout.continue();
+			return;
+        }
+		sgs.interface.Show_CardChooseBox(
+			'选择您的牌',
+			bout.choiceList);
     };
     sgs.Player.prototype.ask_card = function(opt) {
         if(!this.isAI) throw new Error("sorry ! I'm computer.");
@@ -179,21 +196,15 @@ var sgs = sgs || {};
         }
 
         var _bufflog = [], 
-            king = filter(player, function(i) { return i.identity == 0; })[0],
-            king_num = -1,
-            ccard = shuffle(sgs.CARD),
-            playernum = {};
+            king = null,
+            king_pos = -1,
+            ccard = shuffle(sgs.CARD);
 
-        each(player, function(n, i) { if(i == king) { king_num = n; return false; } });
-        player = slice.call(player, king_num).concat(slice.call(player, 0, king_num));
-        if(player.length >= 4) { /* 超过四位玩家,主公血量+1 */
-            player[0].blood++;
-            player[0].hero.life++;
+        each(player, function(n, i) { if (i.identity == sgs.IDENTITY_LORD) { king_pos = n; king = i; return false; } });
+        if ((player.length >= 4) && (null != king)) { /* 超过四位玩家,主公血量+1 */
+            king.blood++;
+            king.maxblood++;
         }
-        
-        each(player, function(n, i) { 
-            playernum[i.nickname] = n;
-         });
         
         _bufflog.push("游戏开始:");
         _bufflog.push("所有玩家身份已分配.");
@@ -205,14 +216,15 @@ var sgs = sgs || {};
         this.ailv = ailv || sgs.DEFAULT_AI_LV;
         this.player = player;/* 玩家 */
         this.playerlen = player.length;
-        this.playernum = playernum; /* 玩家对应 */
-        this.curplayer = 0;/* 当前执行玩家 */
+        this.curplayer = king_pos;/* 当前执行玩家 */
         this.card = ccard; /* 已经洗过的卡 */
-        this.opt = []; /* 操作堆栈 */
-        this.choice = []; /* 要牌队列 */
-        this.step = 0; /* 当前执行状态 0: 判定阶段, 1: 摸牌阶段, 2: 出牌阶段, 3: 弃牌阶段 */
+        this.playOpts = []; /* 出牌操作堆栈 */
+        this.replyOpts = []; /* 应答牌队列 */
+        this.choiceList = []; /* (五谷丰登)选牌队列 */
+		this.stage = sgs.STAGE_JUDGE; /* 当前执行状态 */
         this.attached = {}; /* 绑定的事件 */
         this.last_judge_card; /* 上一张判定牌 */
+		this.wuxie_count = 0; /* 记录本回合无懈可击的次数 */
         
         this.timer = 0;
 
@@ -286,16 +298,16 @@ var sgs = sgs || {};
         var result = [], 
             distance = 0,
             pls = this.player,
-            plpos = pl.identity, 
+            plpos = pl.position, 
             plrange = plrange || pl.range()[0];
 
         each(pls, function(n, i) {
-            if (plpos == i.identity) {
+            if (plpos == i.position) {
                 return;
-            } else if (plpos < i.identity) {
-                distance = Math.min(i.identity - plpos, plpos + pls.length - i.identity);
+            } else if (plpos < i.position) {
+                distance = Math.min(i.position - plpos, plpos + pls.length - i.position);
             } else {
-                distance = Math.min(plpos - i.identity, i.identity + pls.length - plpos);
+                distance = Math.min(plpos - i.position, i.position + pls.length - plpos);
             }
             distance = distance + (i.equip[2] ? 1 : 0); /* 有+1马还需要加1 */
             if(plrange >= distance) {
@@ -319,33 +331,34 @@ var sgs = sgs || {};
     };
     sgs.Bout.prototype.judge = (function(judge){ return function() {
         var result = judge(this); 
-        if(result) { /* GAME OVER */
+        if (result) { /* GAME OVER */
             console.log(result["winner"][0].nickname, result["msg"]);
             return false;
         }
         return true;
     } })(sgs.interpreter.judge);
-    sgs.Bout.prototype.continue = (function(DELAY, response_card){ return function() { 
+    sgs.Bout.prototype.continue = (function(DELAY, response_card){ return function() {
         setTimeout((function(bout){ return function() {
-            if(bout.choice.length > 0) {
-                var opt = bout.choice[bout.choice.length-1],
+            if (bout.replyOpts.length > 0) {
+                var opt = bout.replyOpts[bout.replyOpts.length-1],
                     pltar = opt.target;
 
                 pltar.ask_card(opt);
-                //bout.choice.pop();
-            } else {
-                if(bout.judge()) {
-                    switch(bout.step) {
-                        case 0:
-                            return bout.decision();
-                        case 1:
-                            return bout.get_card();
-                        case 2:
-                            return bout.play_card();
-                        case 3:
-                            return bout.player[bout.curplayer].drop_card();
-                    }
-                }
+            } else if (bout.playOpts.length > 0) {
+                var opt = bout.playOpts[bout.playOpts.length-1];
+
+                sgs.interpreter.action_execute(bout, opt);
+            } else if (bout.judge()) {
+				switch(bout.stage) {
+					case sgs.STAGE_JUDGE:
+						return bout.decision();
+					case sgs.STAGE_GET_CARD:
+						return bout.get_card();
+					case sgs.STAGE_PLAY_CARD:
+						return bout.play_card();
+					case sgs.STAGE_DROP_CARD:
+						return bout.player[bout.curplayer].drop_card();
+				}
             }
         } })(this), DELAY); } })(sgs.DELAY, sgs.interpreter.response_card);
     
@@ -356,7 +369,7 @@ var sgs = sgs || {};
         /** 甄姬-洛神 **/
         if(pl.hero.name == "甄姬" && (pl.status["zhenji.luoshen"] | 0) != -1) {
             pl.status["zhenji.luoshen"] = (pl.status["zhenji.luoshen"] | 0) + 1;
-            this.choice.push(new sgs.Operate("技能", pl, pl, "洛神"));
+            this.replyOpts.push(new sgs.Operate("技能", pl, pl, "洛神"));
             return this.continue();
         }
         /** end-洛神 **/
@@ -365,7 +378,7 @@ var sgs = sgs || {};
             return decision(this, pl, pl.be_decision.pop()); 
         }
 
-        this.step = 1;
+        this.stage = sgs.STAGE_GET_CARD;
         this.continue();
     } })(sgs.interpreter.decision);
     sgs.Bout.prototype.get_card = function(opt) {
@@ -389,96 +402,106 @@ var sgs = sgs || {};
         
         if(pl.status["lebusishu"]) {
             console.log("中乐了.休息一下");
-            this.step = 3;
+            this.stage = sgs.STAGE_DROP_CARD;
         } else {
-            this.step = 2;
+            this.stage = sgs.STAGE_PLAY_CARD;
         }
         this.continue();
     };
-    sgs.Bout.prototype.select_card = (function(select){ return function(opt) {
+    sgs.Bout.prototype.select_card = (function(select_card){ return function(opt) {
         /* 选牌 */
         var pl = opt.source,
             card = opt.data;
 
-        return select(this, opt);
-    } })(sgs.interpreter.select);
+        return select_card(this, opt);
+    } })(sgs.interpreter.select_card);
 
-    sgs.Bout.prototype.choice_card = (function(choice_card, response_card, EQUIP_TYPE_MAPPING){ return function(opt) {
+    sgs.Bout.prototype.choose_card = (function(choose_card, response_card, EQUIP_TYPE_MAPPING){ return function(opt) {
         var pl = opt.source,
             card = opt.data;
 
-        if(card && (card instanceof sgs.Card)) { /* 移除所用卡牌 */
-            if(!pl.rmcard(card)) {
+        if (card && (card instanceof sgs.Card)) { /* 移除所用卡牌 */
+            if (!pl.rmcard(card)) {
                 throw new Error("有没有搞错!明明都用过这牌了!你以为电脑是好欺负的?");
                 return ;
             }
         }
-        choice_card(this, opt);
+        choose_card(this, opt);
 
-    } })(sgs.interpreter.choice_card, 
+    } })(sgs.interpreter.choose_card, 
          sgs.interpreter.response_card,
          sgs.EQUIP_TYPE_MAPPING ); 
 
-    sgs.Bout.prototype.response_card = (function(response_card, Card){ return function(opt) {
+	sgs.Bout.prototype.remove_card = function(opt) {
         var pl = opt.source,
-            card = opt.data;
+            cards = opt.data;
         
-        if(card && (card instanceof sgs.Card)) { /* 移除所用卡牌 */
-            if(!pl.rmcard(card)) {
-                throw new Error("有没有搞错!明明都用过这牌了!你以为电脑是好欺负的?");
-                return ;
-            }
+        if (cards) { /* 移除所用卡牌 */
+		    if (cards instanceof sgs.Card) {
+				if (!pl.rmcard(cards)) {
+					throw new Error("有没有搞错!明明都用过这牌了!你以为电脑是好欺负的?");
+				}
+			} else if (cards instanceof Array) {
+			    each (cards, function(n, i) {
+					if (!pl.rmcard(i)) {
+						throw new Error("有没有搞错!明明都用过这牌了!你以为电脑是好欺负的?");
+					}
+				})
+			}
         }
-
+    };
+	
+    sgs.Bout.prototype.response_card = (function(response_card){ return function(opt) {
+        this.remove_card(opt);
         response_card(this, opt);
+    } })(sgs.interpreter.response_card);
 
-    } })(sgs.interpreter.response_card, sgs.Card);
-
-    sgs.Bout.prototype.play_card = (function(){ return function() {
-
-        var pl = this.player[this.curplayer];
-        if (pl.isAI) {
-            pl.play_card();
-        } else {
-            pl.choice_card();
-        }
-
-    } })();
+    sgs.Bout.prototype.play_card = (function(play_card){ return function(opt) {
+		if(!opt) { /* 未选好牌,去选牌 */
+            this.player[this.curplayer].play_card();
+        } else { /* 已选好牌,直接出 */
+			this.remove_card(opt);
+			play_card(this, opt);
+		}
+    } })(sgs.interpreter.play_card); 
 
     sgs.Bout.prototype.drop_card = function(opt) {
         /* 弃牌 */
-        var pl = this.player[this.curplayer],
-            cards,
-            isdis = false;
+        var pl = this.player[this.curplayer];
         
-        this.step = 3;
-        console.log(pl.nickname, "弃牌了");
-        if(pl.blood < pl.card.length){
-            cards = opt && opt.data;
-            if(!cards) {
+        if (pl.blood < pl.card.length) {
+            var cards = opt && opt.data;
+            if (!cards) {
                 return new sgs.Operate("弃牌", undefined, pl, pl.card.length - pl.blood);
             } else {
-                pl.card = sub(pl.card, cards); 
+			    this.remove_card(opt);
             }
             console.log(pl.nickname, "弃牌", map(cards, function(i) { return i.name; }));
             this.notify("drop_card", pl, cards);
         }
+		console.log(pl.nickname, "弃牌了");
 
         pl.status = {};
         
         setTimeout((function(bout){ return function(){
-            bout.curplayer++;
+			while (true) {
+				bout.curplayer++;
 
-            if(bout.curplayer >= bout.playerlen) { 
-                bout.timer++; 
-                if (bout.timer > 30) {
-                    console.log("GAME OVER"); 
-                    return ;
-                }
-            }
+				if(bout.curplayer >= bout.playerlen) { 
+					bout.timer++;
+					if (bout.timer > 30) {
+						console.log("GAME OVER"); 
+						return ;
+					}
+				}
 
-            bout.curplayer %= bout.playerlen;
-            bout.step = 0;
+				bout.curplayer %= bout.playerlen;
+				pl = bout.player[bout.curplayer]
+				if (pl.blood > 0) {
+					break;
+				}
+			}
+			bout.stage = sgs.STAGE_JUDGE;
             bout.continue();
         } })(this), 50);
     };

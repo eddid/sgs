@@ -47,22 +47,6 @@
         });
     };
     
-    /* 播放声音 */
-    var play_sound = function(src) {
-        $('#sound')[0].src = src;
-        $('#sound')[0].play();
-    };
-    
-    /* 刷新自己血量 */
-    var refresh_blood = function() {
-        var player = $('#player')[0].player;
-            blood_imgs = '';
-        for(var i = 0; i < player.blood; i++)
-            blood_imgs += '<img src="img/system/blod_1.png" />';
-        $('#player_blod_1').html(blood_imgs);
-    };
-    
-    
     /* 拖动 */
     /*
      * 用判断mousemove时鼠标是否按下来判断是否为拖动
@@ -237,7 +221,7 @@
         cards = cards instanceof Array ? cards : [cards];
         var flash = function(dom, name, index) {
             sgs.animation.Card_Flash(player, name); /* 效果动画 */
-            play_sound(sgs.SOUND_FILE_MAPPING.card[name][player.hero.gender]); /* 声音 */
+            sgs.interface.playSound(sgs.SOUND_FILE_MAPPING.card[name][player.hero.gender]); /* 声音 */
             /*
              * 1. 把现有卡牌往后移(动画)
              * 2. 加上要添加的卡牌
@@ -277,7 +261,7 @@
                 }, 3000);
             });
         };
-        if(player == $('#player')[0].player) {
+        if (player == $('#player')[0].player) {
             drag_out(cards);
             $.each(cards, function(i, d) {
                 flash(d.dom, d.name, i);
@@ -297,7 +281,133 @@
         }
         $(player.dom).find('.card_count span').text(player.card.length);
     };
+
+    /* 判定牌动画 sgs.animation.Judge_Card(sgs.interface.bout.player[1], sgs.interface.bout.player[1].card[0]) */
+    sgs.animation.Judge_Card = function(player, cards) {
+        cards = cards instanceof Array ? cards : [cards];
+        var flash = function(dom, name, index) {
+            sgs.animation.Card_Flash(player, name); /* 效果动画 */
+            //sgs.interface.playSound(sgs.SOUND_FILE_MAPPING.card[name][player.hero.gender]); /* 声音 */
+            /*
+             * 1. 把现有卡牌往后移(动画)
+             * 2. 加上要添加的卡牌
+             * 3. 把要添加的卡牌移过去(动画)
+             */
+            var current_count = $('#played_card_box').children().length, /* 现有卡牌数量 */
+                card_count = cards.length, /* 打出的卡牌数量 */
+                finally_width = (current_count + card_count) * (cardInfo.width + 2) - 2, /* 最终宽度(2 为卡牌之间的间隔) */
+                domLeft = $(dom).offset().left,
+                domTop = $(dom).offset().top;
+            
+            $('#played_card_box').children().each(function(i, d) {
+                $(d).animate({
+                    left: -finally_width / 2 + (i + card_count) * (cardInfo.width + 2),
+                    top: -cardInfo.width / 2,
+                }, 300);
+            });
+            $(dom).prependTo($('#played_card_box'));
+            $(dom).css({
+                left: domLeft - $('#played_card_box').offset().left,
+                top: domTop - $('#played_card_box').offset().top,
+            });
+            $(dom).animate({
+                left: -finally_width / 2 + index * (cardInfo.width + 2),
+                top: -cardInfo.width / 2,
+            }, 300, function() {
+                setTimeout(function() {
+                    $(dom).animate({
+                        opacity: 0,
+                    }, 500, function() {
+                        if(dom.card != undefined) {
+                            delete dom.card.dom;
+                            delete dom.card;
+                        }
+                        $(dom).remove();
+                    });
+                }, 3000);
+            });
+        };
+        {
+            $.each(cards, function(i, d) {
+                var cardImg = $('<img src="' + sgs.CARDIMAG_MAPING[d.name] + '" style="width:93px; height:131px;" />');
+                cardImg.appendTo($(document.body));
+                cardImg.css({
+                    position: 'absolute',
+                    left: ($(player.dom).offset().left + 20) + 'px',
+                    top: ($(player.dom).offset().top + 10) + 'px',
+                });
+                flash(cardImg[0], d.name, i);
+            });
+        }
+        $(player.dom).find('.card_count span').text(player.card.length);
+    };
     
+    /* 弃牌动画 sgs.animation.Judge_Card(sgs.interface.bout.player[1], sgs.interface.bout.player[1].card[0]) */
+    sgs.animation.Drop_Card = function(player, cards) {
+        cards = cards instanceof Array ? cards : [cards];
+        var flash = function(dom, name, index) {
+            sgs.animation.Card_Flash(player, name); /* 效果动画 */
+            //sgs.interface.playSound(sgs.SOUND_FILE_MAPPING.card[name][player.hero.gender]); /* 声音 */
+            /*
+             * 1. 把现有卡牌往后移(动画)
+             * 2. 加上要添加的卡牌
+             * 3. 把要添加的卡牌移过去(动画)
+             */
+            var current_count = $('#played_card_box').children().length, /* 现有卡牌数量 */
+                card_count = cards.length, /* 打出的卡牌数量 */
+                finally_width = (current_count + card_count) * (cardInfo.width + 2) - 2, /* 最终宽度(2 为卡牌之间的间隔) */
+                domLeft = $(dom).offset().left,
+                domTop = $(dom).offset().top;
+            
+            $('#played_card_box').children().each(function(i, d) {
+                $(d).animate({
+                    left: -finally_width / 2 + (i + card_count) * (cardInfo.width + 2),
+                    top: -cardInfo.width / 2,
+                }, 300);
+            });
+            $(dom).prependTo($('#played_card_box'));
+            $(dom).css({
+                left: domLeft - $('#played_card_box').offset().left,
+                top: domTop - $('#played_card_box').offset().top,
+            });
+            $(dom).animate({
+                left: -finally_width / 2 + index * (cardInfo.width + 2),
+                top: -cardInfo.width / 2,
+            }, 300, function() {
+                setTimeout(function() {
+                    $(dom).animate({
+                        opacity: 0,
+                    }, 500, function() {
+                        if(dom.card != undefined) {
+                            delete dom.card.dom;
+                            delete dom.card;
+                        }
+                        $(dom).remove();
+                    });
+                }, 3000);
+            });
+        };
+        if (player == $('#player')[0].player) {
+            drag_out(cards);
+            $.each(cards, function(i, d) {
+                flash(d.dom, d.name, i);
+            });
+            sgs.animation.Arrange_Card(player.card);
+        } else {
+            $.each(cards, function(i, d) {
+                var cardImg = $('<img src="' + sgs.CARDIMAG_MAPING[d.name] + '" style="width:93px; height:131px;" />');
+                cardImg.appendTo($(document.body));
+                cardImg.css({
+                    position: 'absolute',
+                    left: ($(player.dom).offset().left + 20) + 'px',
+                    top: ($(player.dom).offset().top + 10) + 'px',
+                });
+                flash(cardImg[0], d.name, i);
+            });
+        }
+        $(player.dom).find('.card_count span').text(player.card.length);
+    };
+	
     /* 装备装备动画 */
     sgs.animation.Equip_Equipment = function(player, card) {
         var type = sgs.EQUIP_TYPE_MAPPING[card.name];
@@ -305,7 +415,7 @@
             drag_out(card);
             $(card.dom).animate({
                 left: $('#attack').offset().left + ($('#attack').width() - $(card.dom).width()) / 2,
-                top: $('#player').offset().top + ($('#player').height() - $(card.dom).height()) / 2,
+                top: $(player.dom).offset().top + ($(player.dom).height() - $(card.dom).height()) / 2,
             }, 500).animate({
                 opacity: 0
             }, 200, function() { $(card.dom).remove(); });
@@ -352,7 +462,7 @@
                 ].join(''));
             $(player.dom).find('.card_count span').text(($(player.dom).find('.card_count span').text() | 0) - 1);
         }
-        play_sound(sgs.SOUND_FILE_MAPPING.equipment[type]);
+        sgs.interface.playSound(sgs.SOUND_FILE_MAPPING.equipment[type]);
     };
     
     /* 整理牌 */
@@ -384,8 +494,8 @@
                         clientX - $('#explanation').width() : clientX,
             targetTop = (clientY + $('#explanation').height()) > $(window).height() ?
                         clientY - $('#explanation').height() : clientY;
-            
-        if(isHero) {
+        
+        if (isHero) {
             var skills = hero_prop[name].skill;
             $(skills).each(function(i, d) {
                 explanation += [
@@ -475,8 +585,12 @@
             damage_img.animate({ opacity: 0 }, 100, function() { damage_img.remove(); });
         }, 1000);
         $(player.dom).find('.blods_1 img').last().remove();
-        play_sound(sgs.SOUND_FILE_MAPPING.damage.common);
-        refresh_blood();
+        sgs.interface.playSound(sgs.SOUND_FILE_MAPPING.damage.common);
+        sgs.interface.refreshBlood(player);
     }
     
+    /* 掉血动画 sgs.animation.Get_Damage(true, sgs.interface.bout.player[1]) */
+	sgs.animation.Get_Cure = function(player) {
+        sgs.interface.refreshBlood(player);
+	}
 })(sgs);

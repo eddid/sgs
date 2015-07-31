@@ -1,3 +1,30 @@
+2015-07-31
+============
+implement features:
+wuguofengdeng(add choiceList in Bout, update continue for get card one by one)
+wanjianqifa
+nanmanruqin
+juedou
+luoshen
+wuxiekeji(add wuxie_count in Bout. partly, need ask wuxie with all other players again if someone reply wuxie)
+update blood for all players
+add animation for Judge_Card/Drop_Card/Get_Cure(partly)
+implement choose_card function for AI and human players
+add code for dead player
+
+fix issues:
+active usable cards in ask_card
+fixed choose roles conflect issue(two players choose the same role)
+ok/cancel/abandon buttons active/deactive issue
+
+optimize codes:
+rename Bout.opt to Bout.playOpts
+rename Bout.choice to Bout.replyOpts
+replace Bout.playernum with Player.position
+unite Bout.step and Player.stage to Bout.stage
+add enumeration for stage/identity
+remove choice_card, invoke play_card/respond_card directly
+
 2015-07-26
 ============
 

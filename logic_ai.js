@@ -94,14 +94,14 @@ var _ = sgs.func.format,
         var pl = this.player,
             bout = this.bout,
             cardname = opt.data,
-            opt_top = this.bout.opt[0];
+            opt_top = this.bout.playOpts[bout.playOpts.length - 1];
         
         if(opt.id == "技能") {
             switch(cardname) {
                 case "洛神":
                     return bout.response_card(new sgs.Operate("技能", pl, pl, "洛神"));
                 case "鬼才":
-                    return bout.response_card(new sgs.Operate("技能", pl, pl, true));
+                    return bout.response_card(new sgs.Operate("技能", pl, pl, false));
             }
         } else {
             switch(cardname) {
@@ -115,23 +115,20 @@ var _ = sgs.func.format,
                         return bout.response_card(new sgs.Operate(cardname, pl, pl, pl.findcard(cardname)));
                     }
                     break;
+                case "杀":
                 case "闪":
                     return bout.response_card(new sgs.Operate(cardname, pl, opt.source, pl.findcard(cardname)));
             }
         }
         return bout.response_card(new sgs.Operate(cardname, pl, opt.source));
     } })();
-    sgs.Ai.prototype.choice_card = (function(){ return function(opt) {
+    sgs.Ai.prototype.choose_card = (function(){ return function(opt) {
         var pl = this.player,
-            bout = this.bout,
-            use = false,
-            cards = pl.card;
+            bout = this.bout;
 
-        if(!opt) { /* 主动出牌 */
-            return this.play_card();
-        } else { /* 被动出牌 */
-            bout.choice_card(new sgs.Operate(opt.id, pl, opt.source, pl.findcard(opt.id))); 
-        }
+		var choiceList = bout.choiceList;
+        pl.card.push(choiceList.pop());
+		bout.choiceList = choiceList;
     } })();
     sgs.Ai.prototype.play_card = (function(attack_deviation, 
                                          magic_deviation,
@@ -151,13 +148,13 @@ var _ = sgs.func.format,
             var the_equip = equips[0], 
                 equip_pos = EQUIP_TYPE_MAPPING[the_equip.name];
             
-            bout.choice_card(new sgs.Operate("装备", pl, pl, the_equip));
+            bout.play_card(new sgs.Operate("装备", pl, pl, the_equip));
             return ;
         }
         /* 缺血有桃就桃 */
         var peachs = filter(cards, function(i) { return i.name == "桃"; });
-        if(peachs.length && pl.blood < pl.hero.life) {
-            return bout.choice_card(new sgs.Operate("桃", pl, pl, peachs[0]));    
+        if(peachs.length && pl.blood < pl.maxblood) {
+            return bout.play_card(new sgs.Operate("桃", pl, pl, peachs[0]));    
         }
 
         /* 非伤害性锦囊 */
@@ -168,7 +165,7 @@ var _ = sgs.func.format,
             }
         });
         if(be_use_card) {
-            return bout.choice_card(new sgs.Operate(be_use_card.name, pl, pl, be_use_card));
+            return bout.play_card(new sgs.Operate(be_use_card.name, pl, pl, be_use_card));
         }
 
         /* 使用锦囊 */
@@ -178,7 +175,7 @@ var _ = sgs.func.format,
         
         be_use_card = magic_deviation(bout, pl, pltar); 
         if(be_use_card) {
-            return bout.choice_card(new sgs.Operate(be_use_card.name, pl, pltar, be_use_card));
+            return bout.play_card(new sgs.Operate(be_use_card.name, pl, pltar, be_use_card));
         }
         
         /* 使用杀 */
@@ -189,7 +186,7 @@ var _ = sgs.func.format,
             if(card_select_info[0].indexOf(pltar) == -1) { /* 如果最佳对象不在可选区域,则改变次级对象 */
                 pltar = undefined;
                 each(card_select_info[0], function(n, i) {
-                    if(pls_rela[bout.playernum[i.nickname]] >= 2) {
+                    if(pls_rela[pl.position] >= 2) {
                         pltar = i;
                         return false;
                     }            
@@ -200,7 +197,7 @@ var _ = sgs.func.format,
                                      ? false 
                                      : true; /* 诸葛连弩连杀 */
                 be_use_card = be_use_card[0];
-                return bout.choice_card(new sgs.Operate(be_use_card.name, pl, pltar, be_use_card));
+                return bout.play_card(new sgs.Operate(be_use_card.name, pl, pltar, be_use_card));
             }
         }
 

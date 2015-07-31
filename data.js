@@ -2,6 +2,17 @@
 sgs.PLAYER_NUM = 4;
 sgs.DEFAULT_AI_LV = 0;
 sgs.DELAY = 1000;
+/* 当前执行状态 -1: 非激活玩家, 0: 判定阶段, 1: 摸牌阶段, 2: 出牌阶段, 3: 弃牌阶段 */
+/*sgs.STAGE_INACTIVE = -1;*/
+sgs.STAGE_JUDGE = 0;
+sgs.STAGE_GET_CARD = 1;
+sgs.STAGE_PLAY_CARD = 2;
+sgs.STAGE_DROP_CARD = 3;
+/* 0: "主公", 1: "忠臣", 2: "内奸", 3: "反贼" */
+sgs.IDENTITY_LORD = 0;
+sgs.IDENTITY_LOYALIST = 1;
+sgs.IDENTITY_TRAITOR = 2;
+sgs.IDENTITY_REBEL = 3;
 
 sgs.CARD_MAGIC_RANGE_MAPPING = {
     "五谷丰登": -1,
@@ -31,7 +42,7 @@ sgs.EQUIP_RANGE_MAPPING = {
     "诸葛连弩": 1,
     "寒冰剑" : 2,
     "雌雄双股剑" : 2,
-    "清鉷剑" : 2,
+    "青釭剑" : 2,
     "青龙偃月刀" : 3,
     "丈八蛇矛" : 3,
     "贯石斧" : 4,
@@ -61,9 +72,8 @@ sgs.EQUIP_TYPE_MAPPING = {
 };
 
 sgs.IDENTITY_MAPPING = { /* 人数对应角色数量 */
-    /* 0: "主公", 1: "忠臣", 2: "内奸", 3: "反贼" */
-    2: [0, 2],
-    4: [0, 1, 2, 3],
+    2: [sgs.IDENTITY_LORD, sgs.IDENTITY_TRAITOR],
+    4: [sgs.IDENTITY_LORD, sgs.IDENTITY_LOYALIST, sgs.IDENTITY_TRAITOR, sgs.IDENTITY_REBEL],
 };
 
 sgs.HERO = [

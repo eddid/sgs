@@ -11,7 +11,14 @@
     <script type="text/javascript" src="data.js"></script>
     <script type="text/javascript" src="logic_func.js"></script>
     <script type="text/javascript" src="logic_interpreter.js"></script>
-    <script type="text/javascript" src="logic_ai.js"></script>
+    <script language="javascript">
+        if ("" != window.location.host){
+			document.write("<script src='logic_ai_clips.js'><\/script>");
+		} else {
+		    document.write("<script src='logic_ai.js'><\/script>");
+		}
+    </script>
+    <!--script type="text/javascript" src="logic_ai.js"></script-->
     <script type="text/javascript" src="logic.js"></script>
     <script type="text/javascript" src="interface.js"></script>
     <script type="text/javascript" src="animation.js"></script>
@@ -23,6 +30,11 @@
         <div id="" style="width:100%; position:absolute;"><img src="img/system/main_top.png" style="width:1000px;" /></div>
         <!-- 游戏开始 -->
         <div id="game_start">开始</div>
+        <div id="game_setting">
+			<input id="game_debug" type="checkbox" style="vertical-align:middle;">调试</input>
+			<hr>
+			<input id="game_clips" type="checkbox" style="vertical-align:middle;">网络</input>
+		</div>
         
         <div class="role" id="role2">
             <!-- 国家 -->

@@ -66,9 +66,7 @@ var sgs = sgs || {};
                     choiceable_num = 1;
                     break;
                 case "乐不思蜀":
-                    choiceable_pl = filter(bout.player, 
-                                           function(i){ return !any(i.be_decision, 
-                                                                    function(ii){ return ii.id == "乐不思蜀" ; }); });
+                    choiceable_pl = filter(bout.player, function(i) { return !i.lebusishu_decision; });
                     choiceable_num = 1;
                     break;
                 case "五谷丰登":
@@ -104,7 +102,7 @@ var sgs = sgs || {};
             may_wuxie = false;
         range(plslen, function(n) {
             pl_has_the_card = pls[(pltar_pos + n) % plslen];
-			if (pl.blood < 1) {
+			if (pl_has_the_card.blood < 1) {
 				return ;
 			}
             has_wuxie = pl_has_the_card.findcard("无懈可击");
@@ -169,17 +167,18 @@ var sgs = sgs || {};
                 case "洛神":
 					if (null == bout.last_judge_card) {
 					    judge_card = bout.card.shift();
-                        bout.notify("skill", "洛神", pltar, judge_card, judge_card.color < 2);
+                        bout.notify("skill", "洛神", pltar, judge_card, judge_card.color < sgs.COLOR_CLUB);
 						if (ask_guicai(bout, pltar, judge_card)) {
 						    return need_continue;
 						}
 					} else {
 					    judge_card = bout.last_judge_card;
 					}
-                    if (judge_card.color < 2) {
+                    if (judge_card.color < sgs.COLOR_CLUB) {
                         pltar.status["zhenji.luoshen"] = -1;
                     } else {
-                        pltar.card.push(judge_card);
+                        pltar.addcard(judge_card);
+						bout.notify("get_card", pltar, [judge_card]);
                         console.log(_("{0} 发动了技能洛神,获得 {1}", pltar.nickname, judge_card.name));
                     }
                     break;
@@ -191,13 +190,14 @@ var sgs = sgs || {};
 					    judge_card = bout.card.shift();
                         bout.notify("judge_card", pltar, judge_card);
 						if (ask_guicai(bout, pltar, judge_card)) {
-						    return;
+						    return need_continue;
 						}
 					} else {
 					    judge_card = bout.last_judge_card;
 					}
+					bout.playOpts.pop();
                     console.log(card.name, "判定,花色:", judge_card.color, "数字:", judge_card.digit);
-                    if (judge_card.color != 1) {
+                    if (judge_card.color != sgs.COLOR_HEART) {
                         pltar.status["lebusishu"] = true;
                     }
                     break;
@@ -206,7 +206,7 @@ var sgs = sgs || {};
                     var cards = bout.card.splice(0, 2);
                     bout.notify("get_card", pltar, cards);
                     console.log(pltar.nickname, "获得", cards);
-                    pltar.card = pltar.card.concat(cards);
+                    pltar.addcard(cards);
                     break;
                 case "闪电":
 					if (null == bout.last_judge_card) {
@@ -218,10 +218,11 @@ var sgs = sgs || {};
 					} else {
 					    judge_card = bout.last_judge_card;
 					}
+					bout.playOpts.pop();
                     console.log("闪电判定--", judge_card.color);
-                    if (judge_card.color == 3 && judge_card.digit >= 2 && judge_card.digit <= 9) { 
+                    if (judge_card.color == sgs.COLOR_SPADE && judge_card.digit >= 2 && judge_card.digit <= 9) { 
                         pltar.blood -= 3;
-                        bout.notify("get_damage", pltar);
+                        bout.notify("get_damage", pltar, pltar);
                         console.log(_("天要下雨,娘要嫁人.你这福分,有幸三生.坑爹阿,遭雷劈啦!"));
                         if (pltar.blood < 1) {
                             ask_peach(bout, pltar, plsrc);  
@@ -238,7 +239,7 @@ var sgs = sgs || {};
 					bout.playOpts.pop();
                     if (pltar.blood < pltar.maxblood) {
                         pltar.blood++;
-                        bout.notify("get_cure", pltar);
+                        bout.notify("get_cure", plsrc, pltar);
                         console.log(_("{0} 恢复一滴血,还剩下{1}滴血", pltar.nickname, pltar.blood));
                     }
 					/* 为下一玩家选牌作准备 */
@@ -277,13 +278,20 @@ var sgs = sgs || {};
 					break;
 				case "顺手牵羊":
 				    bout.playOpts.pop();
+					if (pltar.card.length > 0) {
+					    var theCard = pltar.card[0];
+						pltar.rmcard(theCard);
+						bout.notify("drop_card", pltar, theCard);
+						plsrc.addcard(theCard);
+						bout.notify("get_card", plsrc, [theCard]);
+					}
 					break;
 				case "过河拆桥":
 				    bout.playOpts.pop();
 					if (pltar.card.length > 0) {
-					    var rmcard = pltar.card[0];
-						pltar.rmcard(rmcard);
-						bout.notify("drop_card", pltar, rmcard);
+					    var theCard = pltar.card[0];
+						pltar.rmcard(theCard);
+						bout.notify("drop_card", pltar, theCard);
 					}
 					break;
             }
@@ -304,6 +312,7 @@ var sgs = sgs || {};
 			card = card[0];
 		}
         if(opt.id == "技能") {
+			bout.replyOpts.pop();
 			switch(choice_bot.data) {
 				case "洛神":
 					if (card) { 
@@ -320,14 +329,13 @@ var sgs = sgs || {};
 					action_execute(bout, opt);
 					break;
 			}
-			bout.replyOpts.pop();
         } else if (card) { /* 有卡应对 */
             sgs.interface.focusPlayer(plsrc.dom, false);
             bout.notify("response_card", plsrc, pltar, card);
-            switch(card.name) {
+            switch (card.name) {
                 case "桃":
                     pltar.blood++;
-                    bout.notify("get_cure", pltar);
+                    bout.notify("get_cure", plsrc, pltar);
                     if(pltar.blood > 0) { /* 健康了 */
                         bout.replyOpts = exclude(bout.replyOpts, 
                                               function(i) { return i.id == "桃" && i.target == pltar; });
@@ -351,6 +359,33 @@ var sgs = sgs || {};
                     console.log(_("{0} 使用了无懈可击!", plsrc.nickname));
                     bout.replyOpts.pop();
 					bout.wuxie_count++;
+					/**
+					 * 说明如何判定出无懈可击是伤害还是拒绝伤害(当前玩家出牌则判定伤害,未出牌则判定拒绝伤害)
+					 * 1. 以下牌允许无懈可击(针对无懈可击的无懈可击认为仍然是针对原牌)：
+					 *    五谷丰登/桃园结义/无中生有/顺手牵羊/过河拆桥/借刀杀人/南蛮入侵/万箭齐发/乐不思蜀/闪电/决斗
+					 * 2. 将前三张设定为保护牌,后面的牌为伤害牌(FIXME: 顺手牵羊/过河拆桥/借刀杀人 需要深层判定)
+					 * 3. 认为(0 == bout.wuxie_count % 2)为相互抵消
+					 * 4. 穷举如下表
+					 *      保护牌	Y	Y	N	N
+					 *    相互抵消	Y	N	Y	N
+					 *        伤害	N	Y	Y	N
+					 *    拒绝伤害	Y	N	N	Y
+					 * 所以: 伤害 = 保护牌 ^ 相互抵消
+					 *   拒绝伤害 = ! (保护牌 ^ 相互抵消) = 保护牌 ^ (! 相互抵消)
+					 */
+					var refuse_damage = false;
+					var cardName = opt_top.data.name;
+					if ((cardName == "五谷丰登")
+					 || (cardName == "桃园结义")
+					 || (cardName == "无中生有")) {
+					    refuse_damage = true;
+					}
+					refuse_damage = refuse_damage ^ (0 != bout.wuxie_count % 2);
+					if (refuse_damage) {
+					    bout.notify("tryto_cure", plsrc, pltar, "");
+					} else {
+					    bout.notify("tryto_damage", plsrc, pltar, "");
+					}
 					/* FIXME:每次进行无懈可击后,需要再次询问所有人 */
                     if (last_choice) { /* 如果是最后一次请求无懈可击. */
 					    if (0 == (bout.wuxie_count & 1)) { /* 如果被无懈可击则不用进行原来卡牌的判定,否则进行原来卡牌的判定 */
@@ -378,6 +413,19 @@ var sgs = sgs || {};
 				case "无懈可击":
 			        bout.replyOpts.pop();
 					console.log(choice_bot.target.nickname, "表示没有无懈");
+					var refuse_damage = false;
+					var cardName = opt_top.data.name;
+					if ((cardName == "五谷丰登")
+					 || (cardName == "桃园结义")
+					 || (cardName == "无中生有")) {
+					    refuse_damage = true;
+					}
+					refuse_damage = refuse_damage ^ (0 != bout.wuxie_count % 2);
+					if (refuse_damage) {
+					    bout.notify("refuse_damage", plsrc, pltar, "wuxiekeji");
+					} else {
+					    bout.notify("refuse_cure", plsrc, pltar, "wuxiekeji");
+					}
 					if (last_choice) { /* 如果是最后一次请求无懈可击. */
 					    if (0 == (bout.wuxie_count & 1)) { /* 如果被无懈可击则不用进行原来卡牌的判定,否则进行原来卡牌的判定 */
 				    		bout.last_judge_card = null;
@@ -399,7 +447,7 @@ var sgs = sgs || {};
 
 					pltar.blood--;
 					console.log(_("{0} 扣一滴血,还剩下{1}滴血", pltar.nickname, pltar.blood));
-					bout.notify("get_damage", pltar);
+					bout.notify("get_damage", plsrc, pltar);
 					if(pltar.blood < 1) {
 						ask_peach(bout, pltar, plsrc);
 					};
@@ -421,39 +469,43 @@ var sgs = sgs || {};
 		}
 		
         var equip_pos = sgs.EQUIP_TYPE_MAPPING[card.name];
-        if(equip_pos != undefined) {
+        if (equip_pos != undefined) {
             console.log(_("{0} 装备了 {1}", pltar.nickname, card.name));
             pltar.equip[equip_pos] = card;
             bout.notify("equip_on", pltar, card, equip_pos); 
         } else {
             console.log(_("play {0} 对 {1} 使用 {2}", plsrc.nickname, pltar.nickname, card.name));
             bout.notify("play_card", plsrc, pltar, card);
-            var has_wuxie,
-                may_wuxie = false;
+            var may_wuxie = false;
+			var pl;
             switch(card.name) {
                 case "杀":
                     bout.playOpts.push(opt);
                     bout.replyOpts.push(new sgs.Operate("闪", plsrc, pltar, "闪"));
+					bout.notify("tryto_damage", plsrc, pltar, "");
                     break;
                 case "桃":
                     if (pltar.blood < pltar.maxblood) {
                         pltar.blood++;
-						bout.notify("get_cure", pltar);
+						bout.notify("get_cure", plsrc, pltar);
                         console.log(_("{0} 恢复一滴血,还剩下{1}滴血", pltar.nickname, pltar.blood));
                     }
                     break;
                 case "乐不思蜀":
-                    pltar.be_decision.push(opt);
+                    pltar.lebusishu_decision = opt;
+					sgs.eventNotify("addlebusishu " + pltar.position + " " + card.id);
+					bout.notify("tryto_damage", plsrc, pltar, "");
                     break;
                 case "闪电":
                     opt.has_init = false;
-                    pltar.be_decision.push(opt);
+                    pltar.lightning_decision = opt;
+					sgs.eventNotify("addlightning " + pltar.position + " " + card.id);
                     break;
 				case "五谷丰登":
 				case "桃园结义":
 					/* 从当前玩家开始,依次(后面的玩家先选牌)将玩家放入playOpts堆栈,从自己开始依次接受操作 */
 					for (var i = plsrc.position + bout.playerlen - 1; i >= plsrc.position; i--) {
-					    var pl = bout.player[i%bout.playerlen];
+					    pl = bout.player[i%bout.playerlen];
 					    if (pl.blood > 0) {
 					        bout.playOpts.push(new sgs.Operate(card.name, plsrc, pl, card));
 						}
@@ -461,19 +513,23 @@ var sgs = sgs || {};
 					if ("五谷丰登" == card.name) {
 		    		    bout.choiceList = bout.card.splice(0, bout.player.length);
 					}
-                    may_wuxie = ask_wuxie(bout, pltar);
+					if (pl) {
+                        may_wuxie = ask_wuxie(bout, pl);
+					}
 					/* 因为下面有continue,而action_execute(card.name)也有continue,所以这里不要直接调用action_execute */
 	                break;
 				case "南蛮入侵":
 				case "万箭齐发":
 					/* 从当前玩家开始,依次(后面的玩家先选牌)将玩家放入playOpts堆栈,从自己下一玩家开始依次接受操作 */
 					for (var i = plsrc.position + bout.playerlen - 1; i > plsrc.position; i--) {
-					    var pl = bout.player[i%bout.playerlen];
+					    pl = bout.player[i%bout.playerlen];
 					    if (pl.blood > 0) {
 					        bout.playOpts.push(new sgs.Operate(card.name, plsrc, pl, card));
 						}
 					}
-                    may_wuxie = ask_wuxie(bout, pltar);
+					if (pl) {
+                        may_wuxie = ask_wuxie(bout, pl);
+					}
 					/* 因为下面有continue,而action_execute(card.name)也有continue,所以这里不要直接调用action_execute */
 	                break;
                 case "无中生有":
@@ -486,6 +542,9 @@ var sgs = sgs || {};
                     if (!may_wuxie) {
                         action_execute(bout, opt);
                     }
+					if (("顺手牵羊" == card.name) || ("过河拆桥" == card.name) || ("决斗" == card.name)) {
+					    bout.notify("tryto_damage", plsrc, pltar, "");
+					}
                     break;
                 default:
                     sgs.interpreter.response_card(bout, opt);
@@ -504,7 +563,7 @@ var sgs = sgs || {};
 		if (card instanceof Array) {
 			card = card[0];
 		}
-        switch(card.name) {
+        switch (card.name) {
             case "乐不思蜀":
                 may_wuxie = ask_wuxie(bout, pltar); 
                 if (!may_wuxie) {
@@ -515,19 +574,14 @@ var sgs = sgs || {};
 				}
                 break;
             case "闪电":
-                if (!opt.has_init) { /* 闪电尚未初始化 */
-                    opt.has_init = true;
-                    pltar.be_decision.push(opt);
-                } else { /* 闪电已经初始化 */
-                    may_wuxie = ask_wuxie(bout, pltar);
-                    if (!may_wuxie) {
-                        bout.last_judge_card = null;
-                        action_execute(bout, opt);
-                    } else {
-                        bout.playOpts.push(new sgs.Operate("闪电", plsrc, pltar, card));
-					}
-                }
-                break;
+				may_wuxie = ask_wuxie(bout, pltar);
+				if (!may_wuxie) {
+					bout.last_judge_card = null;
+					action_execute(bout, opt);
+				} else {
+					bout.playOpts.push(new sgs.Operate("闪电", plsrc, pltar, card));
+				}
+			    break;
         }
         return bout.continue();
     } })(sgs.interpreter.action_execute,
@@ -543,7 +597,7 @@ var sgs = sgs || {};
             tmp = {"winner": filter(bout.player, function(i){ return i.identity == sgs.IDENTITY_LORD || i.identity == sgs.IDENTITY_LOYALIST; }),
                    "msg": "主公胜利" };
             return tmp;
-        } 
+        }
         if(live_idens.length == 1 && live_idens[0] == sgs.IDENTITY_TRAITOR) { /* 内奸判定 */
             tmp = {"winner": filter(bout.player, function(i){ return i.identity == sgs.IDENTITY_TRAITOR && i.blood > 0; }),
                    "msg": "内奸胜利" };

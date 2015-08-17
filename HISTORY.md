@@ -1,3 +1,10 @@
+2015-08-11
+============
+add logic_ai_clips.js, do AI base on sgs_clips
+add Player.prototype.addcard, notify add card at a uniform place
+add debug mode for debuging, replace timer to click step by step
+
+
 2015-07-31
 ============
 implement features:
@@ -14,7 +21,7 @@ add code for dead player
 
 fix issues:
 active usable cards in ask_card
-fixed choose roles conflect issue(two players choose the same role)
+fixed choose roles conflict issue(two players choose the same role)
 ok/cancel/abandon buttons active/deactive issue
 
 optimize codes:
@@ -56,7 +63,7 @@ add resource for renwang_shield
 
   实现英雄技能解释的显示
   实现时间减少动画
-  修改初始化界面显示
+  修改初始化界面显�?
 
 
 2011-05-22
@@ -74,7 +81,7 @@ add resource for renwang_shield
 界面:
 
   添加装备装备、选牌动画
-  添加数据和图片
+  添加数据和图�?
   完成英雄选择等初始化
 
 2011-05-19
@@ -91,17 +98,17 @@ add resource for renwang_shield
 
 逻辑实现:
 
-  实现了开局.初始化.
+  实现了开局.初始�?
   摸牌.洗牌.
   日志记录.
-  接下来打算更改游戏流程.加上`判定`前后,`摸牌`前后,`出牌`前后,`弃牌`前后 事件.使流程更丰满.
+  接下来打算更改游戏流�?加上`判定`前后,`摸牌`前后,`出牌`前后,`弃牌`前后 事件.使流程更丰满.
 
 2011-05-18
 ============
 
 界面:
 
-  修改页面，下载图片素材
+  修改页面，下载图片素�?
 
 2011-5-17
 ============

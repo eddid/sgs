@@ -35,14 +35,14 @@
             $('#player_name').text(player.nickname);
             $('#player_head_img').attr('src', 'img/generals/big/' + sgs.HEROIMAG_MAPPING[player.hero.name]);
             $("#player_identity img").attr('src', sgs.IDENTITY_IMG_MAPPING[player.identity]);
-            $('#player_head')[0].name = player.hero.name;
+            $('#player_head')[0].objRef = player.hero;
         } else {
             $(player.dom).find('.role_country img').attr('src', sgs.COUNTRY_IMG_MAPPING[player.hero.country]);
             $(player.dom).find('.role_name').text('_' + player.hero.name + '_');
             if(player.identity == sgs.IDENTITY_LORD)
                 $(player.dom).find('.role_identity img').attr('src', sgs.IDENTITY_IMG_MAPPING[0]);
             $(player.dom).find('.head_img img').attr('src', 'img/generals/small/' + sgs.HEROIMAG_MAPPING[player.hero.name]);
-            $(player.dom).find('.head_img')[0].name = player.hero.name;
+            $(player.dom).find('.head_img')[0].objRef = player.hero;
         }
 		for(var k = 0; k < player.maxblood; k++) {
 			$(player.dom).find('.blods_0').append('<img src="img/system/blod_0.png" />');
@@ -113,7 +113,7 @@
             $.each(cards, function(i, d) {
                 var card = $('<div class="choose_role_card"><img src="img/generals/hero/' +
                         sgs.HEROIMAG_MAPPING[d.name] + '" /></div>');
-                card[0].heroRef = d;
+                card[0].objRef = d;
                 card.css('left', i * (93 + card_padding * 2) + 'px');
                 card_choose_box.find('#choose_cards').append(card);
             });
@@ -136,7 +136,7 @@
                         d.color, ';"><span class="pattern"><img src="',
                         sgs.PATTERN_IMG_MAPPING[d.color], '" /></span><span class="num">',
                         sgs.CARD_COLOR_NUM_MAPPING.number[d.digit], '</span></div><div class="select_unable"></div></div>'].join(''));
-                card[0].heroRef = d;
+                card[0].objRef = d;
                 card.css('left', i * (93 + card_padding * 2) + 'px');
                 card_choose_box.find('#choose_cards').append(card);
             });
